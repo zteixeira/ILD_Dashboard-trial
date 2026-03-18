@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>L&D Strategy | Executive Portfolio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #1e293b; }
+        .executive-card { background: white; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+        .kpi-value { font-size: 2.5rem; font-weight: 800; color: #0f172a; line-height: 1; letter-spacing: -0.02em; }
+        .kpi-label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.05em; }
+        .insight-box { background: #fefce8; border-left: 4px solid #facc15; padding: 1rem; border-radius: 0 8px 8px 0; }
+        .insight-title { font-size: 10px; font-weight: 800; color: #854d0e; text-transform: uppercase; margin-bottom: 4px; }
+        .insight-text { font-size: 12px; color: #713f12; line-height: 1.4; }
+        .filter-select { width: 100%; background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px 14px; font-size: 13px; outline: none; transition: border 0.2s; cursor: pointer; }
+        #auth-overlay { position: fixed; inset: 0; background: #0f172a; z-index: 9999; display: flex; align-items: center; justify-content: center; }
+        #dashboard-content { display: none; }
+    </style>
+</head>
+<body>
+
+    <div id="auth-overlay">
+        <div class="bg-white p-12 rounded-3xl shadow-2xl w-full max-w-md text-center">
+            <h2 class="text-3xl font-extrabold mb-2 text-slate-900">Portfolio Access</h2>
+            <p class="text-slate-500 mb-8 text-sm">Verify credentials to view global L&D data</p>
+            <input type="password" id="passInput" class="w-full border border-slate-200 rounded-xl px-4 py-4 mb-4 text-center text-2xl tracking-[0.5em] outline-none focus:ring-4 focus:ring-indigo-100" placeholder="••••">
+            <button onclick="checkPassword()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-xl transition-all shadow-xl">Unlock Dashboard</button>
+        </div>
+    </div>
+
+    <div id="dashboard-content">
+        <header class="bg-white border-b border-slate-200 sticky top-0 z-50 px-8 py-6">
+            <div class="max-w-[1600px] mx-auto flex justify-between items-center">
+                <h1 class="text-2xl font-black text-slate-900 tracking-tight">GLOBAL L&D <span class="text-indigo-600">STRATEGY</span></h1>
+                <label class="cursor-pointer bg-slate-900 text-white px-6 py-3 rounded-xl text-xs font-black shadow-lg">
+                    UPLOAD DATASET
+                    <input type="file" id="csvFile" accept=".csv" class="hidden"/>
+                </label>
+            </div>
+        </header>
+
+        <main class="max-w-[1600px] mx-auto p-8 space-y-8">
+            <section class="bg-white p-6 rounded-2xl border border-slate-200 grid grid-cols-2 lg:grid-cols-6 gap-6">
+                <div><label class="text-[10px] font-bold text-slate-400 uppercase">Fiscal Year</label><select id="fFY" class="filter-select"></select></div>
+                <div><label class="text-[10px] font-bold text-slate-400 uppercase">Region</label><select id="fRegion" class="filter-select"></select></div>
+                <div><label class="text-[10px] font-bold text-slate-400 uppercase">Location</label><select id="fLocation" class="filter-select"></select></div>
+                <div><label class="text-[10px] font-bold text-slate-400 uppercase">Delivery Format</label><select id="fFormat" class="filter-select"></select></div>
+                <div><label class="text-[10px] font-bold text-slate-400 uppercase">Intervention Type</label><select id="fType" class="filter-select"></select></div>
+                <div><label class="text-[10px] font-bold text-slate-400 uppercase">Facilitator (Names Only)</label><select id="fFac" class="filter-select"></select></div>
+            </section>
+
+            <section class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div class="executive-card p-8 border-l-8 border-slate-300">
+                    <p class="kpi-label">Portfolio Effort</p><p id="kpi-hours" class="kpi-value">0</p>
+                </div>
+                <div class="executive-card p-8 border-l-8 border-indigo-500">
+                    <p class="kpi-label">Portfolio Reach</p><p id="kpi-reach" class="kpi-value">0</p>
+                </div>
+                <div class="executive-card p-8 border-l-8 border-emerald-500">
+                    <p class="kpi-label">Efficiency Index</p><p id="kpi-efficiency" class="kpi-value">0</p>
+                </div>
+                <div class="executive-card p-8 border-l-8 border-amber-500">
+                    <p class="kpi-label">Success Index</p><p id="kpi-sat" class="kpi-value">0%</p>
+                </div>
+            </section>
+
+            <section class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div class="flex flex-col gap-4">
+                    <div class="executive-card overflow-hidden">
+                        <div class="px-6 py-4 bg-emerald-50 border-b border-emerald-100 flex justify-between items-center">
+                            <h3 class="text-xs font-black text-emerald-800 uppercase tracking-widest">Scaling Engines</h3>
+                        </div>
+                        <div class="p-2"><table class="w-full text-left"><tbody id="top-eff-rows"></tbody></table></div>
+                    </div>
+                    <div class="insight-box"><p class="insight-title">Strategic Insight</p><p class="insight-text">High-efficiency programs (Virtual/CBT) are your primary drivers for global scale.</p></div>
+                </div>
+
+                <div class="flex flex-col gap-4">
+                    <div class="executive-card overflow-hidden">
+                        <div class="px-6 py-4 bg-rose-50 border-b border-rose-100 flex justify-between items-center">
+                            <h3 class="text-xs font-black text-rose-800 uppercase tracking-widest">Resource Heavy (Review)</h3>
+                        </div>
+                        <div class="p-2"><table class="w-full text-left"><tbody id="bottom-eff-rows"></tbody></table></div>
+                    </div>
+                    <div class="insight-box" style="background:#fff1f2; border-color:#fb7185;"><p class="insight-title" style="color:#9f1239;">Review Insight</p><p class="insight-text" style="color:#881337;">Low efficiency is expected for coaching; however, standard workshops here require delivery model review.</p></div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        const VALID_PASS = "ILD_Compassion";
+        let rawData = [];
+        let charts = {};
+
+        function checkPassword() {
+            if (document.getElementById('passInput').value === VALID_PASS) {
+                document.getElementById('auth-overlay').style.display = 'none';
+                document.getElementById('dashboard-content').style.display = 'block';
+            }
+        }
+
+        const COLS = {
+            title: 'Short Title', fy: 'FY Requested', region: 'Region', loc: 'Countries Served (For US - Location)',
+            fmt: 'Learning Method (Service)', type: 'Organizational Development', fac: 'Facilitators/Project Team',
+            hrs: 'Intervention Total Hours', pax: '%23 Participants', sat: 'Neighbor Satisfaction'
+        };
+
+        document.getElementById('csvFile').addEventListener('change', (e) => {
+            Papa.parse(e.target.files[0], {
+                header: true, dynamicTyping: true, skipEmptyLines: true,
+                complete: (res) => { rawData = res.data; setup(); }
+            });
+        });
+
+        // Smart List Parser with Numeric ID Stripping
+        function parseCleanList(val, stripNumbers = false) {
+            if (!val) return ["Uncategorized"];
+            let items = [];
+            if (typeof val === 'string' && val.startsWith('[')) {
+                try { items = JSON.parse(val.replace(/""/g, '"')); } catch(e) { items = [val]; }
+            } else { items = [val]; }
+            
+            if (stripNumbers) {
+                // Filter out items that are purely numeric (IDs)
+                items = items.filter(item => isNaN(item) || item.trim() === "");
+            }
+            return items.length ? items : ["Uncategorized"];
+        }
+
+        function getPax(val) {
+            if (typeof val === 'number') return val;
+            const match = String(val).match(/T\s*=\s*(\d+)/i);
+            return match ? parseInt(match[1]) : (parseInt(String(val).replace(/[^\d]/g, '')) || 0);
+        }
+
+        function setup() {
+            const getU = (col, isList, stripNumbers = false) => {
+                const s = new Set();
+                rawData.forEach(d => {
+                    const vals = isList ? parseCleanList(d[col], stripNumbers) : [d[col] || "Uncategorized"];
+                    vals.forEach(v => s.add(String(v)));
+                });
+                return Array.from(s).filter(v => v !== "Uncategorized" && v !== "null" && v !== "undefined").sort();
+            };
+
+            const fill = (id, opts, lbl) => {
+                const el = document.getElementById(id);
+                el.innerHTML = `<option value="All">All ${lbl}</option>` + opts.map(o => `<option value="${o}">${o}</option>`).join('');
+                el.onchange = update;
+            };
+
+            fill('fFY', getU(COLS.fy, false), "Years");
+            fill('fRegion', getU(COLS.region, false), "Regions");
+            fill('fLocation', getU(COLS.loc, true), "Locations");
+            fill('fFormat', getU(COLS.fmt, true), "Formats");
+            fill('fType', getU(COLS.type, false), "Types");
+            // Highlight: Strip numbers from the Facilitator dropdown
+            fill('fFac', getU(COLS.fac, true, true), "Facilitators");
+            update();
+        }
+
+        function update() {
+            const f = {
+                fy: document.getElementById('fFY').value, reg: document.getElementById('fRegion').value,
+                loc: document.getElementById('fLocation').value, fmt: document.getElementById('fFormat').value,
+                type: document.getElementById('fType').value, fac: document.getElementById('fFac').value
+            };
+
+            const filtered = rawData.filter(d => {
+                const locs = parseCleanList(d[COLS.loc]), fmts = parseCleanList(d[COLS.fmt]), facs = parseCleanList(d[COLS.fac]);
+                return (f.fy === 'All' || String(d[COLS.fy]) === f.fy) &&
+                       (f.reg === 'All' || String(d[COLS.region]) === f.reg) &&
+                       (f.loc === 'All' || locs.includes(f.loc)) &&
+                       (f.fmt === 'All' || fmts.includes(f.fmt)) &&
+                       (f.type === 'All' || String(d[COLS.type]) === f.type) &&
+                       (f.fac === 'All' || facs.includes(f.fac));
+            });
+
+            let tH = 0, tP = 0, tS = 0, sc = 0;
+            const tbl = [];
+            filtered.forEach(d => {
+                const h = parseFloat(d[COLS.hrs]) || 0, p = getPax(d[COLS.pax]), s = parseFloat(d[COLS.sat]) || 0;
+                tH += h; tP += p; if(s>0){ tS += s; sc++; }
+                if(h > 0) tbl.push({ title: d[COLS.title] || "Untitled", h, p, e: p/h });
+            });
+
+            document.getElementById('kpi-hours').innerText = Math.round(tH).toLocaleString();
+            document.getElementById('kpi-reach').innerText = tP.toLocaleString();
+            document.getElementById('kpi-efficiency').innerText = tH > 0 ? (tP/tH).toFixed(1) : "0";
+            document.getElementById('kpi-sat').innerText = sc > 0 ? (tS/sc*100).toFixed(0)+"%" : "N/A";
+
+            const sort = [...tbl].sort((a,b) => b.e - a.e);
+            const render = (id, list, cls) => {
+                document.getElementById(id).innerHTML = list.map(i => `
+                    <tr class="border-b border-slate-50 last:border-0">
+                        <td class="p-4 text-xs font-bold text-slate-700 truncate max-w-[200px]">${i.title}</td>
+                        <td class="p-4 text-xs text-slate-500">${i.h}h</td>
+                        <td class="p-4 text-xs text-slate-500">${i.p} pax</td>
+                        <td class="p-4 text-xs font-black text-right ${cls}">${i.e.toFixed(1)}</td>
+                    </tr>
+                `).join('');
+            };
+            render('top-eff-rows', sort.slice(0, 5), 'text-emerald-600');
+            render('bottom-eff-rows', sort.slice(-5).reverse(), 'text-rose-600');
+        }
+    </script>
+</body>
+</html>
